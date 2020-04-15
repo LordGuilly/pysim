@@ -119,8 +119,14 @@ class SimCardCommands(object):
 			return (None, None)
 		if length is None:
 			length = self.__len(r) - offset
-		pdu = self.cla_byte + 'b0%04x%02x' % (offset, (min(256, length) & 0xff))
-		return self._tp.send_apdu(pdu)
+		total_data = ''
+		while offset < length:
+			data_chunk = (min(255, length-offset) & 0xff)
+			pdu = self.cla_byte + 'b0%04x%02x' % (offset, data_chunk)
+			data,sw = self._tp.send_apdu(pdu)
+			total_data += data
+			offset += data_chunk
+		return total_data, sw
 
 	def update_binary(self, ef, data, offset=0):
 		self.select_file(ef)
